@@ -2,9 +2,9 @@ from bs4 import BeautifulSoup
 import requests
 
 
-def get_data(url, sort):
+def get_data(url, sort, server_id):
     """extract data from website, return list of outcomes"""
-    page = requests.get(url+sort)
+    page = requests.get(f"{url}{sort}{server_id}")
     soup = BeautifulSoup(page.text, 'html.parser')
     content = soup.findAll('li', class_='products__list-item')
 
@@ -26,6 +26,6 @@ def get_server_list(url):
     server_list = {}
 
     for option in content:
-        server_list[option.get('value')] = option.get_text()
+        server_list[option.get_text()] = option.get('value')
 
     return server_list

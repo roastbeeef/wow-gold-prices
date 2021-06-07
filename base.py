@@ -18,7 +18,8 @@ from vars import (
     DATA_DIRECTORY,
     RECOMMENDED_FILE,
     CHEAPEST_FILE,
-    SERVER_LIST_FILE
+    SERVER_LIST_FILE,
+    TEMP_SERVER_NAME
 )
 
 now = datetime.now()
@@ -30,5 +31,5 @@ if __name__ == "__main__":
 
     iterations = zip([RECOMMENDED, CHEAPEST], [RECOMMENDED_FILE, CHEAPEST_FILE])
     for dataset, write_file in iterations:
-        _ = get_data(BASE_URL, dataset)
+        _ = get_data(BASE_URL, dataset, TEMP_SERVER_NAME)
         write_data(DATA_DIRECTORY, write_file, _, dt_string)
