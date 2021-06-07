@@ -10,26 +10,16 @@ from utils import (
     write_data_as_json
 )
 
-from vars import (
-    BASE_URL_,
-    BASE_URL,
-    RECOMMENDED,
-    CHEAPEST,
-    DATA_DIRECTORY,
-    RECOMMENDED_FILE,
-    CHEAPEST_FILE,
-    SERVER_LIST_FILE,
-    TEMP_SERVER_NAME
-)
+import vars
 
 now = datetime.now()
 dt_string = now.strftime("%B %d %Y %H:%M:%S")
 
 if __name__ == "__main__":
-    server_list = get_server_list(BASE_URL_)
-    write_data_as_json(DATA_DIRECTORY, SERVER_LIST_FILE, server_list)
+    server_list = get_server_list(vars.BASE_URL_)
+    write_data_as_json(vars.DATA_DIRECTORY, vars.SERVER_LIST_FILE, server_list)
 
-    iterations = zip([RECOMMENDED, CHEAPEST], [RECOMMENDED_FILE, CHEAPEST_FILE])
+    iterations = zip([vars.RECOMMENDED, vars.CHEAPEST], [vars.RECOMMENDED_FILE, vars.CHEAPEST_FILE])
     for dataset, write_file in iterations:
-        _ = get_data(BASE_URL, dataset, TEMP_SERVER_NAME)
-        write_data(DATA_DIRECTORY, write_file, _, dt_string)
+        _ = get_data(vars.BASE_URL, dataset, vars.TEMP_SERVER_NAME)
+        write_data(vars.DATA_DIRECTORY, write_file, _, dt_string)
