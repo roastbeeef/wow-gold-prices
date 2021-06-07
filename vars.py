@@ -9,3 +9,8 @@ CHEAPEST_FILE = 'datalog_cheap.txt'
 SERVER_LIST_FILE = 'server_list.json'
 
 TEMP_SERVER_NAME = 'Razorgore TBC [EU] - Horde'
+
+# hardcoding these, will make dynamic later
+EU_KEY = 41397
+US_KEY = 41398
+RU_KEY = 41399
