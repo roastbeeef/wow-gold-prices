@@ -2,6 +2,8 @@ from bs4 import BeautifulSoup
 import requests
 import boto3
 from datetime import datetime
+from boto3.dynamodb.conditions import Key
+from statistics import mean
 
 import vars
 
@@ -11,9 +13,13 @@ from utils import (
 )
 
 
-def get_data(url, sort, server_id):
+def get_data(url, sort, server):
     """extract data from website, return list of outcomes"""
-    page = requests.get(f"{url}{sort}{server_id}")
+    server_id = "&server=" + str(server['ID'])
+    print(f"{url}{server['Region']}{server_id}{sort}")
+
+    page = requests.get(f"{url}{server['Region']}{server_id}{sort}")
+
     soup = BeautifulSoup(page.text, 'html.parser')
     content = soup.findAll('li', class_='products__list-item')
 
@@ -40,8 +46,10 @@ def get_server_list(url):
     return server_list
 
 
-def update_servers():
-    ddb = boto3.resource('dynamodb')
+def update_servers(ddb=None):
+    if not ddb:
+        ddb = boto3.resource('dynamodb')
+
     servers = ddb.Table('Servers')
 
     server_list = get_server_list(vars.BASE_URL_)
@@ -51,20 +59,65 @@ def update_servers():
             if(server_list[key] == 'all'):
                 continue
 
+            region = "0"
+            if "[EU]" in key:
+                region = vars.EU_KEY
+            elif "[US]" in key:
+                region = vars.US_KEY
+            else:
+                region = vars.RU_KEY
+
             batch.put_item(
                 Item={
                     'Server': key,
-                    'ID': int(server_list[key])
+                    'ID': int(server_list[key]),
+                    'Region': region,
+                    'Faction': "Alliance" if "Alliance" in key else "Horde"
                 })
 
 
-def update_prices():
-    now = datetime.now()
-    dt_string = now.strftime("%B %d %Y %H:%M:%S")
+def update_prices(ddb=None):
+    if not ddb:
+        ddb = boto3.resource('dynamodb')
 
-    iterations = zip([vars.RECOMMENDED, vars.CHEAPEST], [
-        vars.RECOMMENDED_FILE, vars.CHEAPEST_FILE])
+    table = ddb.Table('Servers')
 
-    for dataset, write_file in iterations:
-        _ = get_data(vars.BASE_URL, dataset, vars.TEMP_SERVER_NAME)
-        write_data(vars.DATA_DIRECTORY, write_file, _, dt_string)
+    scan_kwargs = {
+        'FilterExpression': Key('ID').gt(0)
+    }
+
+    id_list = []
+    done = False
+    start_key = None
+    while not done:
+        if start_key:
+            scan_kwargs['ExclusiveStartKey'] = start_key
+        response = table.scan(**scan_kwargs)
+        id_list.append(response.get('Items', []))
+        start_key = response.get('LastEvaluatedKey', None)
+        done = start_key is None
+
+    servers = id_list[0]
+
+    for server in servers:
+        iterations = zip([vars.RECOMMENDED, vars.CHEAPEST], [
+            vars.RECOMMENDED_FILE, vars.CHEAPEST_FILE])
+
+        for dataset, _ in iterations:
+            now = datetime.now()
+            dt_string = now.strftime("%B %d %Y %H:%M:%S")
+            print("Getting data for " + str(server['ID']) +
+                  " and sorting by " + dataset.split('=')[-1])
+            data = get_data(vars.BASE_URL_, dataset, server)
+            print("Price: " + str(mean(data)))
+            print("__________________________")
+
+            price_tbl = ddb.Table('Pricepoints')
+            response = price_tbl.put_item(
+                Item={
+                    'ID': str(server['ID']),
+                    'Date': str(dt_string),
+                    'Price': str(mean(data)),
+                    'Sort': dataset.split('=')[-1]
+                }
+            )

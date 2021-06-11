@@ -1,5 +1,5 @@
 import argparse
-
+import boto3
 
 from functions import (
     get_data,
@@ -18,7 +18,9 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
+    ddb = boto3.resource('dynamodb')
+
     if(args.action == "prices"):
-        update_prices()
+        update_prices(ddb)
     if(args.action == "servers"):
         update_servers()
