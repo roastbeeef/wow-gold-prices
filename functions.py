@@ -106,11 +106,11 @@ def update_prices(ddb=None):
         for dataset, _ in iterations:
             now = datetime.now()
             dt_string = now.strftime("%B %d %Y %H:%M:%S")
-            print("Getting data for " + str(server['ID']) +
-                  " and sorting by " + dataset.split('=')[-1])
+
             data = get_data(vars.BASE_URL_, dataset, server)
-            print("Price: " + str(mean(data)))
-            print("__________________________")
+
+            if not data:
+                continue
 
             price_tbl = ddb.Table('Pricepoints')
             response = price_tbl.put_item(
